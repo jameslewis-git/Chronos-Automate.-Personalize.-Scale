@@ -25,18 +25,19 @@ export default function DashboardPage() {
   const { data: team } = useSWR('/api/team', fetcher)
   const [dismissed, setDismissed] = useState(false)
 
-  const activeProjects = projects?.filter((p: { status: string }) => p.status === 'active') || []
-  const todayTasks = myTasks?.filter((t: { dueDate: string }) => {
+  const activeProjects = (Array.isArray(projects) ? projects : []).filter((p: { status: string }) => p.status === 'active')
+  const safeMyTasks = Array.isArray(myTasks) ? myTasks : []
+  const todayTasks = safeMyTasks.filter((t: { dueDate: string }) => {
     if (!t.dueDate) return false
     const today = new Date().toISOString().split('T')[0]
     return t.dueDate.split('T')[0] === today
   }) || []
-  const doneTasks = myTasks?.filter((t: { status: string }) => t.status === 'done') || []
+  const doneTasks = safeMyTasks.filter((t: { status: string }) => t.status === 'done')
 
   const stats = {
     activeProjects: activeProjects.length,
     tasksDueToday: todayTasks.length,
-    teamMembers: team?.length || 0,
+    teamMembers: (Array.isArray(team) ? team : []).length,
     completedTasks: doneTasks.length,
   }
 
@@ -128,13 +129,13 @@ export default function DashboardPage() {
           {/* My Tasks */}
           <section>
             <h2 style={{ fontSize: '1rem', marginBottom: '16px' }}>My Tasks</h2>
-            {!myTasks || myTasks.length === 0 ? (
+            {!safeMyTasks || safeMyTasks.length === 0 ? (
               <div className="card" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '13px' }}>
                 No tasks assigned to you yet.
               </div>
             ) : (
               <div className="card" style={{ overflow: 'hidden' }}>
-                {myTasks.filter((t: { status: string }) => t.status !== 'done').slice(0, 8).map((task: { _id: string; title: string; status: string; priority: string; projectId?: { name: string; color: string } }, i: number, arr: unknown[]) => (
+                {safeMyTasks.filter((t: { status: string }) => t.status !== 'done').slice(0, 8).map((task: { _id: string; title: string; status: string; priority: string; projectId?: { name: string; color: string } }, i: number, arr: unknown[]) => (
                   <div
                     key={task._id}
                     style={{

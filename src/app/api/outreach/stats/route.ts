@@ -5,12 +5,38 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/options'
 import mongoose from 'mongoose'
+import { demoLeads, demoExecutions } from '@/lib/demoData'
 
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    if (session.user.id === 'demo-user-001') {
+      const count = (arr: { status: string }[], s: string) => arr.filter((x) => x.status === s).length
+      return NextResponse.json({
+        total: demoLeads.length,
+        leads: {
+          new: count(demoLeads, 'new'),
+          contacted: count(demoLeads, 'contacted'),
+          in_sequence: count(demoLeads, 'in_sequence'),
+          replied: count(demoLeads, 'replied'),
+          converted: count(demoLeads, 'converted'),
+          opted_out: count(demoLeads, 'opted_out'),
+          bounced: count(demoLeads, 'bounced'),
+        },
+        executions: {
+          pending: count(demoExecutions, 'pending'),
+          running: count(demoExecutions, 'running'),
+          paused: count(demoExecutions, 'paused'),
+          completed: count(demoExecutions, 'completed'),
+          failed: count(demoExecutions, 'failed'),
+          opted_out: count(demoExecutions, 'opted_out'),
+        },
+        recentExecutions: demoExecutions,
+      })
     }
 
     await connectDB()

@@ -6,6 +6,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/options'
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
+import { demoChats, demoMessages } from '@/lib/demoData'
 
 export async function GET(req: Request, { params }: { params: Promise<{ chatId: string }> }) {
   try {
@@ -13,6 +14,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ chatId: 
     if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { chatId } = await params;
+
+    if (session.user.id === 'demo-user-001') {
+      const chat = demoChats.find((c) => c._id === chatId)
+      if (!chat) return NextResponse.json({ error: 'Chat not found or access denied' }, { status: 404 })
+      return NextResponse.json({ chat, messages: demoMessages[chatId] || [] })
+    }
 
     if (!mongoose.Types.ObjectId.isValid(chatId)) {
       return NextResponse.json({ error: 'Invalid chat ID format' }, { status: 400 })

@@ -2,7 +2,50 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { ArrowRight, Sparkles } from 'lucide-react'
+import { ArrowRight, Sparkles, Zap, Loader2 } from 'lucide-react'
+import { signIn } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+
+function DemoButton() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+
+  const handleDemo = async () => {
+    setLoading(true)
+    try {
+      const res = await signIn('demo', { token: 'demo', redirect: false })
+      if (!res?.error) {
+        router.push('/dashboard')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <button
+      onClick={handleDemo}
+      disabled={loading}
+      className="group relative w-full sm:w-auto inline-flex justify-center items-center gap-2 px-10 py-4 text-base font-semibold rounded-full transition-all shadow-lg overflow-hidden"
+      style={{
+        background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+        color: '#fff',
+        border: 'none',
+        cursor: loading ? 'wait' : 'pointer',
+        opacity: loading ? 0.85 : 1,
+      }}
+    >
+      <span className="relative z-10 flex items-center gap-2">
+        {loading
+          ? <><Loader2 className="w-5 h-5" style={{ animation: 'spin 1s linear infinite' }} /> Entering...</>
+          : <><Zap className="w-5 h-5 group-hover:scale-110 transition-transform" /> Try Live Demo</>
+        }
+      </span>
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+    </button>
+  )
+}
 
 export function CTA() {
   return (
@@ -49,27 +92,18 @@ export function CTA() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <DemoButton />
             <Link
               href="/login"
-              className="group relative w-full sm:w-auto inline-flex justify-center items-center gap-2 px-10 py-4 text-base font-semibold rounded-full transition-all shadow-lg overflow-hidden"
-              style={{ background: 'var(--l-accent)', color: 'var(--l-bg)' }}
-            >
-              <span className="relative z-10 flex items-center gap-2">
-                Get Started Free
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-            </Link>
-            <Link
-              href="#"
-              className="w-full sm:w-auto inline-flex justify-center items-center px-10 py-4 text-base font-semibold rounded-full transition-all"
+              className="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-10 py-4 text-base font-semibold rounded-full transition-all"
               style={{
                 background: 'var(--l-badge-bg)',
                 border: '1px solid var(--l-border)',
                 color: 'var(--l-text)',
               }}
             >
-              Contact Sales
+              <ArrowRight className="w-4 h-4" style={{ color: 'var(--l-text-secondary)' }} />
+              Sign In
             </Link>
           </div>
         </motion.div>

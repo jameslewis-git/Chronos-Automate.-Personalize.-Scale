@@ -1,28 +1,17 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowRight, Sparkles, Play } from 'lucide-react'
+import {
+  ArrowRight, Sparkles, Play, Zap, Loader2,
+  ClipboardList, MessageSquare, FileEdit, Brain,
+  CheckCircle2, GripVertical, Maximize2, Minus,
+  LayoutDashboard, Bot, Send, FolderKanban,
+  TrendingUp, Users, Calendar, Search,
+} from 'lucide-react'
 import { motion, useMotionValue, useSpring, useTransform, type Variants } from 'framer-motion'
 import { useRef, useState, useCallback, useEffect } from 'react'
-import {
-  ClipboardList,
-  MessageSquare,
-  FileEdit,
-  Brain,
-  Zap,
-  CheckCircle2,
-  GripVertical,
-  Maximize2,
-  Minus,
-  LayoutDashboard,
-  Bot,
-  Send,
-  FolderKanban,
-  TrendingUp,
-  Users,
-  Calendar,
-  Search,
-} from 'lucide-react'
+import { signIn } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 
 /* ═══════════════════════════════════════════════════════════
    INTERACTIVE WORKFLOW CANVAS
@@ -836,6 +825,50 @@ function FloatingCard() {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   DEMO BUTTON
+   ═══════════════════════════════════════════════════════════ */
+
+function DemoButton() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+
+  const handleDemo = async () => {
+    setLoading(true)
+    try {
+      const res = await signIn('demo', { token: 'demo', redirect: false })
+      if (!res?.error) {
+        router.push('/dashboard')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <button
+      onClick={handleDemo}
+      disabled={loading}
+      className="group relative w-full sm:w-auto inline-flex justify-center items-center gap-2 px-8 py-4 text-base font-semibold rounded-full transition-all shadow-lg overflow-hidden"
+      style={{
+        background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+        color: '#fff',
+        border: 'none',
+        cursor: loading ? 'wait' : 'pointer',
+        opacity: loading ? 0.85 : 1,
+      }}
+    >
+      <span className="relative z-10 flex items-center gap-2">
+        {loading
+          ? <><Loader2 className="w-5 h-5" style={{ animation: 'spin 1s linear infinite' }} /> Loading demo...</>
+          : <><Zap className="w-5 h-5 group-hover:scale-110 transition-transform" /> Try Live Demo</>
+        }
+      </span>
+      <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+    </button>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════
    HERO SECTION
    ═══════════════════════════════════════════════════════════ */
 
@@ -919,25 +952,15 @@ export function Hero() {
               animate="visible"
               className="flex flex-col sm:flex-row items-center lg:items-start gap-4"
             >
+              <DemoButton />
               <Link
                 href="/login"
-                className="group relative w-full sm:w-auto inline-flex justify-center items-center gap-2 px-8 py-4 text-base font-semibold rounded-full transition-all shadow-lg overflow-hidden"
-                style={{ background: 'var(--l-accent)', color: 'var(--l-bg)' }}
-              >
-                <span className="relative z-10 flex items-center gap-2">
-                  Start building free
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </span>
-                <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-              </Link>
-              <a
-                href="#workflow"
                 className="group w-full sm:w-auto inline-flex justify-center items-center gap-2 px-8 py-4 text-base font-semibold rounded-full transition-all backdrop-blur-sm"
                 style={{ background: 'var(--l-badge-bg)', border: '1px solid var(--l-border)', color: 'var(--l-text)' }}
               >
-                <Play className="w-4 h-4" style={{ color: 'var(--l-text-secondary)' }} />
-                Watch demo
-              </a>
+                <ArrowRight className="w-4 h-4" style={{ color: 'var(--l-text-secondary)' }} />
+                Sign in
+              </Link>
             </motion.div>
 
             <motion.div

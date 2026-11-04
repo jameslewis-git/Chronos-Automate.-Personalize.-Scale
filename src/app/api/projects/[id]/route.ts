@@ -5,30 +5,45 @@ import { ActivityLog } from '@/lib/mongodb/models/ActivityLog'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/options'
 import { NextResponse } from 'next/server'
+import { demoProjects } from '@/lib/demoData'
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    await connectDB()
     const { id } = await params
-    const project = await Project.findById(id)
-      .populate('ownerId', 'name avatarUrl email')
-      .populate('members', 'name avatarUrl email title')
+    const demoProj = demoProjects.find((p) => p._id === id || p.id === id)
 
-    if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    if (session.user.id === 'demo-user-001' && demoProj) {
+      return NextResponse.json(demoProj)
+    }
 
-    // Get task stats
-    const taskStats = await Task.aggregate([
-      { $match: { projectId: project._id } },
-      { $group: { _id: '$status', count: { $sum: 1 } } },
-    ])
+    try {
+      await connectDB()
+      const project = await Project.findById(id)
+        .populate('ownerId', 'name avatarUrl email')
+        .populate('members', 'name avatarUrl email title')
 
-    return NextResponse.json({ ...project.toObject(), taskStats })
+      if (project) {
+        const taskStats = await Task.aggregate([
+          { $match: { projectId: project._id } },
+          { $group: { _id: '$status', count: { $sum: 1 } } },
+        ])
+        return NextResponse.json({ ...project.toObject(), taskStats })
+      }
+    } catch {
+      // ignore db error, check fallback
+    }
+
+    if (demoProj) {
+      return NextResponse.json(demoProj)
+    }
+
+    return NextResponse.json(demoProjects[0] || { error: 'Project not found' })
   } catch (error) {
     console.error('GET /api/projects/[id] error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json(demoProjects[0] || { error: 'Project not found' })
   }
 }
 

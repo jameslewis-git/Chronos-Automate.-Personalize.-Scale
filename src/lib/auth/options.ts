@@ -4,8 +4,32 @@ import { connectDB } from '@/lib/mongodb/client'
 import { User } from '@/lib/mongodb/models/User'
 import bcrypt from 'bcryptjs'
 
+// ── Demo user — no DB needed ──────────────────────────────────────────────────
+export const DEMO_USER = {
+  id: 'demo-user-001',
+  name: 'James Lewis',
+  email: 'james@chronos.demo',
+  role: 'admin',
+  title: 'Product Lead',
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
+    // ── One-click Demo login (no DB, no password) ──
+    CredentialsProvider({
+      id: 'demo',
+      name: 'Demo',
+      credentials: {
+        token: { label: 'Demo Token', type: 'text' },
+      },
+      async authorize(credentials) {
+        if (credentials?.token === 'demo') {
+          return DEMO_USER
+        }
+        return null
+      },
+    }),
+
     // ── Email / Password ──
     CredentialsProvider({
       id: 'credentials',

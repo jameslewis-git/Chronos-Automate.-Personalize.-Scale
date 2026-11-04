@@ -10,7 +10,16 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 }
 
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
+export const isFirebaseConfigured = !!firebaseConfig.apiKey
 
-export const auth = getAuth(app)
+// Initialised lazily so pages that import this file still render when Firebase
+// isn't configured (e.g. demo mode); the error only surfaces on Google sign-in.
+export function getFirebaseAuth() {
+  if (!firebaseConfig.apiKey) {
+    throw new Error('Google sign-in is not configured. Set NEXT_PUBLIC_FIREBASE_* in .env.local.')
+  }
+  const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
+  return getAuth(app)
+}
+
 export const googleProvider = new GoogleAuthProvider()

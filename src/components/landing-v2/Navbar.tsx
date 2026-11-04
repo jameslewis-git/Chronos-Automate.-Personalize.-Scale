@@ -3,9 +3,41 @@
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, Sun, Moon } from 'lucide-react'
+import { Menu, X, Sun, Moon, Zap, Loader2 } from 'lucide-react'
 import Image from 'next/image'
 import { useTheme } from './ThemeContext'
+import { signIn } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+
+function NavDemoButton({ className, style, onClick }: { className?: string; style?: React.CSSProperties; onClick?: () => void }) {
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+
+  const handleDemo = async () => {
+    setLoading(true)
+    onClick?.()
+    try {
+      const res = await signIn('demo', { token: 'demo', redirect: false })
+      if (!res?.error) router.push('/dashboard')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <button
+      onClick={handleDemo}
+      disabled={loading}
+      className={className}
+      style={{ ...style, cursor: loading ? 'wait' : 'pointer', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+    >
+      {loading
+        ? <><Loader2 className="w-3.5 h-3.5" style={{ animation: 'spin 1s linear infinite' }} /> Loading...</>
+        : <><Zap className="w-3.5 h-3.5" /> Try Demo</>
+      }
+    </button>
+  )
+}
 
 const navLinks = [
   { label: 'Features', href: '#features' },
@@ -132,18 +164,14 @@ export function Navbar() {
               >
                 Log in
               </Link>
-              <Link
-                href="/login"
+              <NavDemoButton
                 className="group relative px-5 py-2 text-[13px] font-semibold rounded-xl transition-all overflow-hidden"
                 style={{
-                  background: 'var(--l-accent)',
-                  color: 'var(--l-bg)',
-                  boxShadow: '0 0 20px rgba(99,102,241,0.2)',
+                  background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                  color: '#fff',
+                  boxShadow: '0 0 20px rgba(99,102,241,0.3)',
                 }}
-              >
-                <span className="relative z-10">Get Started</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-              </Link>
+              />
             </div>
 
             {/* Mobile — theme + hamburger */}
@@ -227,14 +255,11 @@ export function Navbar() {
                   >
                     Log in
                   </Link>
-                  <Link
-                    href="/login"
+                  <NavDemoButton
+                    className="block w-full px-4 py-3 text-center rounded-xl font-semibold text-sm"
+                    style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', color: '#fff' }}
                     onClick={() => setMobileOpen(false)}
-                    className="block px-4 py-3 text-center rounded-xl font-semibold text-sm"
-                    style={{ background: 'var(--l-accent)', color: 'var(--l-bg)' }}
-                  >
-                    Get Started Free
-                  </Link>
+                  />
                 </div>
               </div>
             </motion.div>

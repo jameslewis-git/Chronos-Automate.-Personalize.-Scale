@@ -3,10 +3,10 @@
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react'
+import { Mail, Lock, User, ArrowRight, Loader2, Zap } from 'lucide-react'
 import Image from 'next/image'
 import { signInWithPopup } from 'firebase/auth'
-import { auth, googleProvider } from '@/lib/firebase'
+import { getFirebaseAuth, googleProvider, isFirebaseConfigured } from '@/lib/firebase'
 
 import { useTheme } from '@/components/landing-v2/ThemeContext'
 
@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+  const [demoLoading, setDemoLoading] = useState(false)
   const [error, setError] = useState('')
 
   const [form, setForm] = useState({
@@ -23,6 +24,24 @@ export default function LoginPage() {
     email: '',
     password: '',
   })
+
+  const handleDemoLogin = async () => {
+    setDemoLoading(true)
+    setError('')
+    try {
+      const res = await signIn('demo', { token: 'demo', redirect: false })
+      if (res?.error) {
+        setError('Demo login failed. Please try again.')
+      } else {
+        router.push('/dashboard')
+        router.refresh()
+      }
+    } catch {
+      setError('Something went wrong. Please try again.')
+    } finally {
+      setDemoLoading(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -78,6 +97,69 @@ export default function LoginPage() {
 
   return (
     <div style={{ width: '100%', maxWidth: '560px' }}>
+
+      {/* ── Demo Banner ─────────────────────────────────────── */}
+      <div
+        style={{
+          marginBottom: '24px',
+          padding: '16px 20px',
+          background: 'linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(168,85,247,0.15) 100%)',
+          border: '1px solid rgba(99,102,241,0.3)',
+          borderRadius: '14px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Zap size={16} style={{ color: '#818cf8', flexShrink: 0 }} />
+          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--l-text)', letterSpacing: '-0.01em' }}>
+            Resume Demo — Try it instantly
+          </span>
+        </div>
+        <p style={{ fontSize: '12.5px', color: 'var(--l-text-secondary)', margin: 0, lineHeight: 1.5 }}>
+          No signup needed. Explore the full workspace with pre-loaded projects, tasks, docs, and AI.
+        </p>
+        <button
+          type="button"
+          onClick={handleDemoLogin}
+          disabled={demoLoading}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '10px 20px',
+            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '10px',
+            fontSize: '13.5px',
+            fontWeight: 600,
+            cursor: demoLoading ? 'wait' : 'pointer',
+            opacity: demoLoading ? 0.8 : 1,
+            transition: 'opacity 150ms ease, transform 150ms ease',
+            letterSpacing: '-0.01em',
+          }}
+          onMouseOver={(e) => { if (!demoLoading) e.currentTarget.style.transform = 'translateY(-1px)' }}
+          onMouseOut={(e) => { e.currentTarget.style.transform = 'none' }}
+        >
+          {demoLoading
+            ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Entering Demo...</>
+            : <><Zap size={15} /> Enter Demo Workspace</>
+          }
+        </button>
+      </div>
+
+      {/* Divider */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+        <div style={{ flex: 1, height: '1px', background: 'var(--l-border)' }} />
+        <span style={{ fontSize: '11.5px', color: 'var(--l-text-tertiary)', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          or sign in with account
+        </span>
+        <div style={{ flex: 1, height: '1px', background: 'var(--l-border)' }} />
+      </div>
+
       {/* Logo */}
       <div style={{ textAlign: 'center', marginBottom: '40px' }}>
         <div
@@ -161,6 +243,8 @@ export default function LoginPage() {
             )}
           </button>
 
+          {isFirebaseConfigured && (
+          <>
           {/* Divider */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '20px 0 4px' }}>
             <div style={{ flex: 1, height: '1px', background: 'var(--l-border)' }} />
@@ -176,7 +260,7 @@ export default function LoginPage() {
               setGoogleLoading(true)
               setError('')
               try {
-                const result = await signInWithPopup(auth, googleProvider)
+                const result = await signInWithPopup(getFirebaseAuth(), googleProvider)
                 const firebaseUser = result.user
 
                 // Pass Firebase user data to NextAuth's firebase-google provider
@@ -234,6 +318,8 @@ export default function LoginPage() {
             )}
             {googleLoading ? 'Signing in...' : 'Continue with Google'}
           </button>
+          </>
+          )}
         </div>
       </form>
 

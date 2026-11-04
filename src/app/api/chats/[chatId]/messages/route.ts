@@ -6,6 +6,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/options'
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
+import { demoChats, demoMessages, DEMO_USERS } from '@/lib/demoData'
 
 export async function POST(req: Request, { params }: { params: Promise<{ chatId: string }> }) {
   try {
@@ -19,6 +20,23 @@ export async function POST(req: Request, { params }: { params: Promise<{ chatId:
       return NextResponse.json({ error: 'Message content is required' }, { status: 400 })
     }
     
+    if (session.user.id === 'demo-user-001') {
+      const message = {
+        _id: `m-${Date.now()}`,
+        chatId,
+        senderId: DEMO_USERS[0],
+        content: content.trim(),
+        createdAt: new Date().toISOString(),
+      }
+      ;(demoMessages[chatId] ||= []).push(message)
+      const chat = demoChats.find((c) => c._id === chatId)
+      if (chat) {
+        chat.lastMessageAt = message.createdAt
+        chat.latestMessage = { content: message.content, createdAt: message.createdAt }
+      }
+      return NextResponse.json(message, { status: 201 })
+    }
+
     if (!mongoose.Types.ObjectId.isValid(chatId)) {
         return NextResponse.json({ error: 'Invalid chat ID format' }, { status: 400 })
     }

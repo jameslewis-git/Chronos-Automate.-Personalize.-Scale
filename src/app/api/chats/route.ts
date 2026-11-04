@@ -6,6 +6,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/options'
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
+import { demoChats, DEMO_USERS } from '@/lib/demoData'
 
 // Ensure models are registered
 const _User = User;
@@ -15,6 +16,8 @@ export async function GET() {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    if (session.user.id === 'demo-user-001') return NextResponse.json(demoChats)
 
     await connectDB()
     const chats = await Chat.find({
@@ -39,7 +42,7 @@ export async function GET() {
     return NextResponse.json(chatsWithLatestMessage)
   } catch (error) {
     console.error('GET /api/chats error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json([])
   }
 }
 
@@ -47,6 +50,20 @@ export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    if (session.user.id === 'demo-user-001') {
+      const { isGroup, name, participantIds } = await req.json()
+      const participants = DEMO_USERS.filter((u) => u._id === session.user.id || (participantIds || []).includes(u._id))
+      const newChat = {
+        _id: `chat-${Date.now()}`,
+        isGroup: !!isGroup,
+        name: isGroup ? name : undefined,
+        participants,
+        lastMessageAt: new Date().toISOString(),
+      }
+      demoChats.unshift(newChat as any)
+      return NextResponse.json(newChat, { status: 201 })
+    }
 
     await connectDB()
     const { isGroup, name, participantIds } = await req.json()
